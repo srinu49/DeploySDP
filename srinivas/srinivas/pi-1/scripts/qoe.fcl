@@ -1,0 +1,104 @@
+FUNCTION_BLOCK qoe	// Block definition (there may be more than one block per file)
+
+VAR_INPUT				// Define input variables
+	roe : REAL;
+	ccs : REAL;
+	
+END_VAR
+
+VAR_OUTPUT				// Define output variable
+	qoe : REAL;
+END_VAR
+
+FUZZIFY roe			// Fuzzify input variable 'service': {'poor', 'good' , 'excellent'}
+	TERM low :=  TRAPE 0 0 2 5;
+	TERM average :=  TRIAN 2 5 8;
+	TERM high := TRIAN 5 10 10;
+END_FUZZIFY
+
+
+
+
+FUZZIFY ccs			// Fuzzify input variable 'food': { 'rancid', 'delicious' }
+	TERM low :=  TRAPE 0 0 2 5;
+	TERM medium :=  TRIAN 2 5 8;
+	TERM good := TRIAN 5 10 10;
+END_FUZZIFY
+
+//FUZZIFY processingspeed			// Fuzzify input variable 'food': { 'rancid', 'delicious' }
+//	TERM least :=  TRAPE -1 -1 -0.8 0;
+//	TERM average :=  TRIAN -0.8 0 0.8;
+//	TERM  intense:= TRAPE 0 0.8 1 1;
+//END_FUZZIFY
+
+
+DEFUZZIFY qoe			// Defzzzify output variable 'tip' : {'cheap', 'average', 'generous' }
+	TERM verylow :=  TRIAN  0 0 2.5;   
+	TERM low  :=     TRIAN  0 2.5 5;         
+	TERM medium :=  TRIAN 2.5 5 7.5;         
+	TERM high :=     TRIAN 5 7.5 10;  
+	TERM veryhigh:=  TRIAN   7.5 10 10;    //(10.0, 1);
+	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+//
+RULEBLOCK No1
+	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'OR' to fulfill DeMorgan's Law)
+	ACT : MIN;			// Use 'min' activation method
+	//ACCU : MAX;			// Use 'max' accumulation method
+
+//
+//RULEBLOCK No1
+//	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'OR' to fulfill DeMorgan's Law)
+//	ACT : MIN;			// Use 'min' activation method
+//	ACCU : MAX;	
+	
+	
+	
+	
+	RULE 1 : IF roe IS low AND ccs IS low THEN qoe IS medium;
+	RULE 2 : IF roe IS low AND ccs IS medium THEN qoe IS high;
+	RULE 3 : IF roe IS low AND ccs IS good THEN qoe IS veryhigh;
+	RULE 4 : IF roe IS average AND ccs IS low THEN qoe IS low;
+	RULE 5 : IF roe IS average AND ccs IS medium THEN qoe IS medium;
+	RULE 6 : IF roe IS average AND ccs IS good THEN qoe IS high;
+	RULE 7 : IF roe IS high AND ccs IS low THEN qoe IS verylow;
+	RULE 8 : IF roe IS high AND ccs IS medium THEN qoe IS low;
+	RULE 9 : IF roe IS high AND ccs IS good THEN qoe IS medium;
+	
+	//RULE 1 : IF roe IS poor AND ccs IS low THEN qoe IS medium;
+//	RULE 2 :  IF roundtriptime IS lengthy AND resourceavailability IS standard AND processingspeed IS intense THEN ccs IS medium;
+//	RULE 3 :  IF roundtriptime IS lengthy AND resourceavailability IS poor AND processingspeed IS intense THEN ccs IS low;
+//	RULE 4 :  IF roundtriptime IS lengthy AND resourceavailability IS rich AND processingspeed IS average THEN ccs IS medium;
+//	RULE 5 :  IF roundtriptime IS lengthy AND resourceavailability IS standard AND processingspeed IS average THEN ccs IS low;
+//	RULE 6 : IF roundtriptime IS lengthy AND resourceavailability IS poor AND processingspeed IS average THEN ccs IS low;
+//	RULE 7 :  IF roundtriptime IS lengthy AND resourceavailability IS rich AND processingspeed IS least THEN ccs IS low;
+//	RULE 8 :  IF roundtriptime IS lengthy AND resourceavailability IS standard AND processingspeed IS least THEN ccs IS low;
+//	RULE 9 : IF roundtriptime IS lengthy AND resourceavailability IS poor AND processingspeed IS least THEN ccs IS low;
+//	RULE 10 :IF roundtriptime IS typical AND resourceavailability IS rich AND processingspeed IS intense THEN ccs IS medium;
+//	RULE 11 :IF roundtriptime IS typical AND resourceavailability IS standard AND processingspeed IS intense THEN ccs IS medium;
+//	RULE 12 :IF roundtriptime IS typical AND resourceavailability IS poor AND processingspeed IS intense THEN ccs IS medium;
+//	RULE 13 :IF roundtriptime IS typical AND resourceavailability IS rich AND processingspeed IS average THEN ccs IS medium;
+//	RULE 14 :IF roundtriptime IS typical AND resourceavailability IS standard AND processingspeed IS average THEN ccs IS medium;
+//	RULE 15 :IF roundtriptime IS typical AND resourceavailability IS poor AND processingspeed IS average THEN ccs IS low;
+//	RULE 16 :IF roundtriptime IS typical AND resourceavailability IS rich AND processingspeed IS least THEN ccs IS medium;
+//	RULE 17 :IF roundtriptime IS typical AND resourceavailability IS standard AND processingspeed IS least THEN ccs IS low;
+//	RULE 18 :IF roundtriptime IS typical AND resourceavailability IS poor AND processingspeed IS least THEN ccs IS low;
+//	RULE 19 :IF roundtriptime IS short AND resourceavailability IS rich AND processingspeed IS intense THEN ccs IS high;
+//	RULE 20 :IF roundtriptime IS short AND resourceavailability IS standard AND processingspeed IS intense THEN ccs IS medium;
+//	RULE 21 :IF roundtriptime IS short AND resourceavailability IS poor AND processingspeed IS intense THEN ccs IS medium;
+//	RULE 22 :IF roundtriptime IS short AND resourceavailability IS rich AND processingspeed IS average THEN ccs IS medium;
+//	RULE 23 :IF roundtriptime IS short AND resourceavailability IS standard AND processingspeed IS average THEN ccs IS medium;
+//	RULE 24 :IF roundtriptime IS short AND resourceavailability IS poor AND processingspeed IS average THEN ccs IS medium;
+//	RULE 25 :IF roundtriptime IS short AND resourceavailability IS rich AND processingspeed IS least THEN ccs IS medium;
+//	RULE 26 :IF roundtriptime IS short AND resourceavailability IS standard AND processingspeed IS least THEN ccs IS medium;
+//	RULE 27 :IF roundtriptime IS short AND resourceavailability IS poor AND processingspeed IS least THEN ccs IS low;
+	
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
+
+//to run
+//java -jar jFuzzyLogic.jar -e qoe.fcl 8.5 9
+//refer https://jfuzzylogic.sourceforge.net/html/manual.html
+

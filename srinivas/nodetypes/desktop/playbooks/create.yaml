@@ -1,0 +1,189 @@
+---
+- name: Install Minikube and OpenFaaS
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg-agent
+        - software-properties-common
+
+    - name: Install Minikube dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - conntrack
+        - socat
+
+    - name: Check if Minikube is installed
+      stat:
+        path: /usr/local/bin/minikube
+      register: minikube_status
+
+    - name: Install Minikube
+      shell: |
+        curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+      args:
+        creates: /usr/local/bin/minikube
+      when: not minikube_status.stat.exists
+
+    - name: Start Minikube
+      shell: minikube start --driver=docker --force
+
+    - name: Install kubectl binary with curl
+      shell:  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    - name: Validate the binaries
+      shell:  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+
+    - name: Install kubectl
+      shell: install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+    - name: change file permissions
+      shell: |
+        chmod +x kubectl
+        mkdir -p ~/.local/bin
+        mv ./kubectl ~/.local/bin/kubectl
+
+    - name: Make the location for python-scripts
+      file:
+        path: /opt/human-detection
+        recurse: true
+        state: directory
+        force: no
+
+    - name: Copy file with owner and permissions
+      ansible.builtin.copy:
+        src: "{{ script_url }}"
+        dest: /opt/human-detection
+        mode: '777'
+
+    - name: Install OpenFaaS CLI
+      shell: curl -sSL https://cli.openfaas.com | sudo sh
+
+    - name: Install Arkade
+      shell: curl -sSLf https://get.arkade.dev/ | sudo sh
+
+    - name: Install OpenFaaS
+      shell: arkade install openfaas
+
+    - name: Apply basic authentication to OpenFaaS gateway
+      shell: |
+        kubectl -n openfaas rollout status deploy/gateway
+
+    - name: Port Forwarding
+      shell: kubectl port-forward svc/gateway -n openfaas 8081:8080 &
+      async: 300  # Adjust the timeout as needed (in seconds)
+      poll: 0
+      ignore_errors: true
+
+    - name: Generating a password and login to openfaas gateway
+      shell: |
+        PASSWORD=$(kubectl get secret -n openfaas basic-auth -o jsonpath="{.data.basic-auth-password}" | base64 --decode; echo)
+        echo -n $PASSWORD | faas-cli login --username admin --password-stdin -g http://localhost:8081
+      args:
+        executable: /bin/bash
+
+    - name: Deploy openfaas extract human function
+      shell: |
+        faas-cli deploy -f /opt/human-detection/namespace.yml --image srinivasuoh/mqttextracthuman --name mqttextracthuman --gateway http://localhost:8081
+      args:
+        executable: /bin/bash
+
+    - name: Deploy openfaas send email function
+      shell: |
+        faas-cli deploy -f /opt/human-detection/namespace.yml --image srinivasuoh/sendemail --name sendemail --gateway http://localhost:8081
+      args:
+        executable: /bin/bash
+
+    - name: Install pip3
+      become: true
+      package:
+        name: python3-pip
+        state: latest
+
+    - name: Installing apt packages
+      ansible.builtin.apt:
+        name: "{{ apt_packages }}"
+        state: latest
+
+    - name: Installing required python packages
+      ansible.builtin.pip:
+        name: "{{ pip_packages }}"
+        state: latest
+        executable: /usr/bin/pip3
+
+    - name: Add a few configuration lines at the end of mosquitto.conf
+      ansible.builtin.lineinfile:
+        path: /etc/mosquitto/mosquitto.conf
+        line: |
+          allow_anonymous true
+          listener 1883 0.0.0.0
+        insertafter: EOF
+
+    - name: Restart the mosquitto service
+      ansible.builtin.service:
+        name: mosquitto
+        state: restarted
+
+    - name: Run python scripts
+      command: python3 /opt/human-detection/"{{ item }}" &
+      async: 30
+      poll: 0
+      loop: "{{ python_scripts }}"
+
+
+    # - name: Generating a password and login to openfaas gateway
+    #   shell: echo -n $PASSWORD | faas-cli login --username admin --password-stdin -g http://localhost:8081
+    #   executable: /bin/bash
+
+    # - name: Download Helm installation script
+    #   get_url:
+    #     url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    #     dest: /tmp/get_helm.sh
+
+    # - name: Make Helm installation script executable
+    #   file:
+    #     path: /tmp/get_helm.sh
+    #     mode: +x
+
+    # - name: Run Helm installation script
+    #   shell: /tmp/get_helm.sh
+
+    # - name: Install OpenFaaS using Helm
+    #   shell: helm repo add openfaas https://openfaas.github.io/faas-netes/ && \
+    #          helm upgrade openfaas openfaas/openfaas --install \
+    #          --namespace openfaas \
+    #          --set basic_auth=false \
+    #          --set gateway.service.port=8081
+
+    # - name: Forward OpenFaaS gateway port
+    #   expect:
+    #     command: kubectl port-forward svc/gateway -n openfaas 8081:8080 &
+    #     responses:
+    #       "[1]": "\r"  # Send Enter key
+
+    # - name: Start port-forwarding
+    #   command: kubectl port-forward svc/gateway -n openfaas 8081:8080 &
+    #   async: 60
+    #   poll: 0
+    #   ignore_errors: true
+
+    # - name: Wait for port-forwarding to start
+    #   pause:
+    #     seconds: 5  # Adjust as needed
+
+    # - name: Send Enter key to complete port-forwarding
+    #   expect:
+    #     command: ""
+    #     responses:
+    #       "": "\r"  # Send Enter key
+

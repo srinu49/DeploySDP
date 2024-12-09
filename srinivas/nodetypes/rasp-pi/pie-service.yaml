@@ -1,0 +1,66 @@
+---
+tosca_definitions_version: tosca_simple_yaml_1_3
+
+description: Human Detection Service Type
+
+node_types:
+  pie.service:
+    derived_from: tosca.nodes.SoftwareComponent
+
+    properties:
+      name:
+        description: Name of the service
+        type: string
+      
+      script_url:
+        description: URL for python scripts to copy
+        type: string
+
+      apt_packages:
+        description: Required apt dependencies
+        type: list
+        default: []
+      
+      pip_packages:
+        description: Required python dependencies
+        type: list
+        default: []
+
+      run_scripts:
+        description: Run python scripts
+        type: list
+        default: []
+      
+    requirements:
+      - host:
+          capability: tosca.capabilities.Compute
+          relationship: tosca.relationships.HostedOn
+          occurrences: [1, 1]
+      - dependency:
+          capability: tosca.capabilities.Container
+          relationship: tosca.relationships.DependsOn
+          occurrences: [0, UNBOUNDED]
+      
+    interfaces:
+      Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
+        inputs:
+          script_url: 
+            value: { get_property: [SELF, script_url] }
+            type: string
+
+          apt_packages: 
+            value: { get_property: [SELF, apt_packages] }
+            type: list
+          
+          pip_packages:
+            value: { get_property: [SELF, pip_packages] }
+            type: list
+
+          python_scripts:
+            value: { get_property: [SELF, run_scripts] }
+            type: list
+
+        operations:
+          create: playbooks/create.yaml
+          delete: playbooks/delete.yaml

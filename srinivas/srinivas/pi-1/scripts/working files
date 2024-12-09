@@ -1,0 +1,6 @@
+/home/pi/pipeline-2/pipe2_captureimage.py
+/home/pi/pipeline-2/read.py
+
+On Node-3
+------------------------
+RUN  /home/pi-cv-101/read.py

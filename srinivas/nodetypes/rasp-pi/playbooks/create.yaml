@@ -1,0 +1,54 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+
+    - name: Install pip3
+      become: true
+      package:
+        name: python3-pip
+        state: latest
+
+    - name: Installing apt packages
+      ansible.builtin.apt:
+        name: "{{ apt_packages }}"
+        state: latest
+    
+    - name: Installing required python packages
+      ansible.builtin.pip:
+        name: "{{ pip_packages }}"
+        state: latest
+        executable: /usr/bin/pip3
+
+    - name: Make the location for python-script and daemon service
+      file:
+        path: /opt/human-detection
+        recurse: true
+        state: directory
+        force: no
+
+    - name: Copy file with owner and permissions
+      ansible.builtin.copy:
+        src: "{{ script_url }}"
+        dest: /opt/human-detection
+        mode: '777'
+
+    - name: Add a few configuration lines at the end of mosquitto.conf
+      ansible.builtin.lineinfile:
+        path: /etc/mosquitto/mosquitto.conf
+        line: |
+          allow_anonymous true
+          listener 1883 0.0.0.0
+        insertafter: EOF
+
+    - name: Restart the mosquitto service
+      ansible.builtin.service:
+        name: mosquitto
+        state: restarted
+
+    - name: Run python scripts
+      command: python3 /opt/human-detection/"{{ item }}" &
+      async: 30
+      poll: 0
+      loop: "{{ python_scripts }}"
+    

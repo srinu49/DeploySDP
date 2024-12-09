@@ -1,0 +1,86 @@
+FUNCTION_BLOCK roe	// Block definition (there may be more than one block per file)
+
+VAR_INPUT				// Define input variables
+	accessrate : REAL;
+	requiredresources : REAL;
+	processingtime : REAL;
+END_VAR
+
+VAR_OUTPUT				// Define output variable
+	roe : REAL;
+END_VAR
+
+FUZZIFY accessrate			// Fuzzify input variable 'service': {'poor', 'good' , 'excellent'}
+	TERM slow :=TRAPE -1 -1 -0.8 0; 
+	TERM normal := TRIAN -0.8 0 0.8;
+	TERM fast := TRAPE 0 0.8 1 1;
+END_FUZZIFY
+
+FUZZIFY processingtime			// Fuzzify input variable 'food': { 'rancid', 'delicious' }
+	TERM stringent := TRAPE -1 -1 -0.8 0;
+	TERM moderate :=  TRIAN -0.8 0 0.8;
+	TERM flexible := TRAPE 0 0.8 1 1;
+END_FUZZIFY
+
+FUZZIFY requiredresources			// Fuzzify input variable 'food': { 'rancid', 'delicious' }
+	TERM small :=TRAPE -1 -1 -0.8 0;
+	TERM regular :=  TRIAN -0.8 0 0.8;
+	TERM large := TRAPE 0 0.8 1 1;
+END_FUZZIFY
+
+
+DEFUZZIFY roe			// Defzzzify output variable 'tip' : {'cheap', 'average', 'generous' }
+	TERM low :=    2;            //(2.0, 1);
+	TERM medium :=  5;           //(5.0, 1);
+	TERM high :=      10;       //(10.0, 1);
+	METHOD : COGS;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+//
+RULEBLOCK No1
+	OR : MAX;			// Use 'min' for 'and' (also implicit use 'max' for 'or' to fulfill DeMorgan's Law)
+	//ACT : MIN;			// Use 'min' activation method
+	//ACCU : MAX;			// Use 'max' accumulation method
+
+//
+//RULEBLOCK No1
+//	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'or' to fulfill DeMorgan's Law)
+//	ACT : MIN;			// Use 'min' activation method
+//	ACCU : MAX;	
+	
+	
+	RULE 1 : IF accessrate IS slow OR requiredresources IS large OR processingtime IS stringent THEN roe IS high;
+	RULE 2 :  IF accessrate IS slow OR requiredresources IS regular OR processingtime IS stringent THEN roe IS medium;
+	RULE 3 :  IF accessrate IS slow OR requiredresources IS small OR processingtime IS stringent THEN roe IS medium;
+	RULE 4 :  IF accessrate IS slow OR requiredresources IS large OR processingtime IS moderate THEN roe IS medium;
+	RULE 5 :  IF accessrate IS slow OR requiredresources IS regular OR processingtime IS moderate THEN roe IS medium;
+	RULE 6 :  IF accessrate IS slow OR requiredresources IS small OR processingtime IS moderate THEN roe IS medium;
+	RULE 7 :  IF accessrate IS slow OR requiredresources IS large OR processingtime IS flexible THEN roe IS medium;
+	RULE 8 :  IF accessrate IS slow OR requiredresources IS regular OR processingtime IS flexible THEN roe IS medium;
+	RULE 9 :  IF accessrate IS slow OR requiredresources IS small OR processingtime IS flexible THEN roe IS low;
+	RULE 10 :  IF accessrate IS normal OR requiredresources IS large OR processingtime IS stringent THEN roe IS high;
+	RULE 11:  IF accessrate IS normal OR requiredresources IS regular OR processingtime IS stringent THEN roe IS high;
+	RULE 12:  IF accessrate IS normal OR requiredresources IS small OR processingtime IS stringent THEN roe IS medium;
+	RULE 13:  IF accessrate IS normal OR requiredresources IS large OR processingtime IS moderate THEN roe IS high;
+	RULE 14:  IF accessrate IS normal OR requiredresources IS regular OR processingtime IS moderate THEN roe IS medium;
+	RULE 15:  IF accessrate IS normal OR requiredresources IS small OR processingtime IS moderate THEN roe IS medium;
+	RULE 16:  IF accessrate IS normal OR requiredresources IS large OR processingtime IS flexible THEN roe IS medium;
+	RULE 17:  IF accessrate IS normal OR requiredresources IS regular OR processingtime IS flexible THEN roe IS medium;
+	RULE 18:  IF accessrate IS normal OR requiredresources IS small OR processingtime IS flexible THEN roe IS medium;
+	RULE 19 :  IF accessrate IS fast OR requiredresources IS large OR processingtime IS stringent THEN roe IS high;
+	RULE 20:  IF accessrate IS fast OR requiredresources IS regular OR processingtime IS stringent THEN roe IS high;
+	RULE 21:  IF accessrate IS fast OR requiredresources IS small OR processingtime IS stringent THEN roe IS high;
+	RULE 22:  IF accessrate IS fast OR requiredresources IS large OR processingtime IS moderate THEN roe IS high;
+	RULE 23:  IF accessrate IS fast OR requiredresources IS regular OR processingtime IS moderate THEN roe IS high;
+	RULE 24:  IF accessrate IS fast OR requiredresources IS small OR processingtime IS moderate THEN roe IS medium;
+	RULE 25:  IF accessrate IS fast OR requiredresources IS large OR processingtime IS flexible THEN roe IS high;
+	RULE 26:  IF accessrate IS fast OR requiredresources IS regular OR processingtime IS flexible THEN roe IS medium;
+	RULE 27 :  IF accessrate IS fast OR requiredresources IS small OR processingtime IS flexible THEN roe IS medium;
+	
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
+
+//to run
+//java -jar jFuzzyLogic.jar -e roe.fcl  -1 -0.71 1
+//refer https://jfuzzylogic.sourceforge.net/html/manual.html

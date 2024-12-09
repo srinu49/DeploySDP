@@ -1,0 +1,159 @@
+---
+tosca_definitions_version: tosca_simple_yaml_1_3
+
+description: Service Template for Human Detection Services
+
+metadata:
+  template_name: "Service template"
+  template_author: "srinivas"
+  template_version: "1.0"
+
+imports:
+  - nodetypes/desktop/desktop-service.yaml
+  - nodetypes/rasp-pi/pie-service.yaml
+
+topology_template:
+  inputs:
+    node_1:
+      type: string
+      description: Input IP address of node_1
+
+    node_2:
+      type: string
+      description: Input IP address of node_2
+
+    node_3:
+      type: string
+      description: Input IP address of node_3
+
+    node_4:
+      type: string
+      description: Input IP address of node_4
+
+    node_5:
+      type: string
+      description: Input IP address of node_5
+
+  node_templates:
+    rasp-pie-1:
+      type: tosca.nodes.Compute
+      attributes:
+        private_address: { get_input: node_1 }
+        public_address: { get_input: node_1 }
+
+    rasp-pie-2:
+      type: tosca.nodes.Compute
+      attributes:
+        private_address: { get_input: node_2 }
+        public_address: { get_input: node_2 }
+
+    rasp-pie-3:
+      type: tosca.nodes.Compute
+      attributes:
+        private_address: { get_input: node_3 }
+        public_address: { get_input: node_3 }
+
+    desktop-1:
+      type: tosca.nodes.Compute
+      attributes:
+        private_address: { get_input: node_4 }
+        public_address: { get_input: node_4 }
+
+    desktop-2:
+      type: tosca.nodes.Compute
+      attributes:
+        private_address: { get_input: node_5 }
+        public_address: { get_input: node_5 }
+
+    pie-service-1:
+      type: pie.service
+      properties:
+        name: pi-2
+        script_url: /home/anant/Desktop/TOSCA_Projects/srinivas/srinivas/pi-1/scripts/
+        apt_packages: 
+          - openjdk-8-jdk
+          - mosquitto
+          - mosquitto-clients
+        pip_packages:
+          - picamera
+          - paho-mqtt==1.6.1
+          - paramiko
+        run_scripts:
+          - "read.py"
+          - "read2.py"
+          - "listenforresize.py"
+          - "decision.py"
+      requirements:
+        - host: rasp-pie-2
+
+    pie-service-2:
+      type: pie.service
+      properties:
+        name: pi-3
+        script_url: /home/anant/Desktop/TOSCA_Projects/srinivas/srinivas/pi-1/scripts/
+        apt_packages: 
+          - openjdk-8-jdk
+          - mosquitto
+          - mosquitto-clients
+        pip_packages:
+          - picamera
+          - paho-mqtt==1.6.1
+          - paramiko
+        run_scripts:
+          - "read.py"
+          - "read2.py"
+          - "listenforresize.py"
+          - "decision.py"
+      requirements:
+        - host: rasp-pie-3
+
+    desktop-service-1:
+        type: desktop.service
+        requirements:
+          - host: desktop-1
+        properties:
+          apt_packages:
+            - mosquitto
+          pip_packages:
+            - paho-mqtt==1.6.1
+            - requests
+          script_url: /home/anant/Desktop/TOSCA_Projects/srinivas/srinivas/systems/
+          run_scripts:
+          - "filereceiver_humanobject.py"
+          - "filesreceiver.py"
+
+    desktop-service-2:
+        type: desktop.service
+        requirements:
+          - host: desktop-1
+        properties:
+          apt_packages:
+            - mosquitto
+          pip_packages:
+            - paho-mqtt==1.6.1
+            - requests
+          script_url: /home/anant/Desktop/TOSCA_Projects/srinivas/srinivas/systems/
+          run_scripts:
+          - "filereceiver_humanobject.py"
+          - "filesreceiver.py"
+
+    pie-service-3:
+      type: pie.service
+      properties:
+        name: pi-1
+        script_url: /home/anant/Desktop/TOSCA_Projects/srinivas/srinivas/pi-1/scripts/
+        apt_packages:
+          - openjdk-8-jdk
+          - mosquitto
+          - mosquitto-clients
+        pip_packages:
+          - picamera
+          - paho-mqtt==1.6.1
+          - paramiko
+        run_scripts:
+          - "read.py"
+          - "listenforresize.py"
+          - "decision.py"
+          - "pipe2_captureimage.py"
+      requirements:
+        - host: rasp-pie-1

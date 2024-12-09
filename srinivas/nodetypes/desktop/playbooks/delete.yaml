@@ -1,0 +1,38 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Remove Minikube
+      shell: |
+        minikube delete
+        rm /usr/local/bin/minikube
+        rm -rf ~/.minikube
+        rm -rf /var/lib/minikube
+
+    - name: Remove Kubectl
+      shell: |
+        rm /usr/local/bin/kubectl
+        rm ~/.local/bin/kubectl
+
+    - name: Stop the mosquitto service
+      ansible.builtin.service:
+        name: mosquitto
+        state: stopped
+
+    - name: Remove required apt packages
+      apt:
+        name: "{{ apt_packages }}"
+        state: absent
+        purge: true
+
+    - name: Remove required python packages
+      ansible.builtin.pip:
+        name: "{{ pip_packages }}"
+        state: absent
+
+    - name: Uninstall Arkade
+      shell: |
+        rm /usr/local/bin/arkade
+        rm -rf ~/.arkade
+
+

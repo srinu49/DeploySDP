@@ -1,0 +1,24 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Remove location
+      file:
+        path: /opt/human-detection
+        state: absent
+
+    - name: Stop the mosquitto service
+      ansible.builtin.service:
+        name: mosquitto
+        state: stopped
+    
+    - name: Remove required apt packages
+      apt:
+        name: "{{ apt_packages }}"
+        state: absent
+        purge: true
+
+    - name: Remove required python packages
+      pip:
+        name: "{{ pip_packages }}"
+        state: absent

@@ -1,0 +1,21 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  mqttextracthuman:
+    lang: python3-flask-debian
+    handler: ./mqttextracthuman
+    image: angelshaju/mqttextracthuman:latest
+    labels:
+      com.openfaas.scale.min: "1"
+      com.openfaas.scale.max: "3"
+      com.openfaas.scale.factor: "8"
+    environment:
+      RAW_BODY: True
+      read_timeout: "13500s" # seconds
+      write_timeout: "13500s" # seconds
+      exec_timeout: "13500s"
+    build_args:
+      TEST_ENABLED: false
+    

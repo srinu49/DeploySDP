@@ -1,0 +1,97 @@
+FUNCTION_BLOCK ccs	// Block definition (there may be more than one block per file)
+
+VAR_INPUT				// Define input variables
+	roundtriptime : REAL;
+	resourceavailability : REAL;
+	processingspeed : REAL;
+END_VAR
+
+VAR_OUTPUT				// Define output variable
+	ccs : REAL;
+END_VAR
+
+FUZZIFY roundtriptime			// Fuzzify input variable 'service': {'poor', 'good' , 'excellent'}
+	TERM short :=  TRAPE -1 -1 -0.8 0;
+	TERM typical :=  TRIAN -0.8 0 0.8;
+	TERM lengthy := TRAPE 0 0.8 1 1;
+END_FUZZIFY
+
+
+
+
+FUZZIFY resourceavailability			// Fuzzify input variable 'food': { 'rancid', 'delicious' }
+	TERM poor :=  TRAPE -1 -1 -0.8 0;
+	TERM standard :=  TRIAN -0.8 0 0.8;
+	TERM rich := TRAPE 0 0.8 1 1;
+END_FUZZIFY
+
+FUZZIFY processingspeed			// Fuzzify input variable 'food': { 'rancid', 'delicious' }
+	TERM least :=  TRAPE -1 -1 -0.8 0;
+	TERM average :=  TRIAN -0.8 0 0.8;
+	TERM  intense:= TRAPE 0 0.8 1 1;
+END_FUZZIFY
+
+
+DEFUZZIFY ccs			// Defzzzify output variable 'tip' : {'cheap', 'average', 'generous' }
+	TERM low :=    2;            //(2.0, 1);
+	TERM medium :=  5;           //(5.0, 1);
+//  TERM high :=      10;       //(10.0, 1);
+	TERM good :=      10;       //(10.0, 1);
+	METHOD : COGS;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+//
+RULEBLOCK No1
+	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'OR' to fulfill DeMorgan's Law)
+	ACT : MIN;			// Use 'min' activation method
+	//ACCU : MAX;			// Use 'max' accumulation method
+
+//
+//RULEBLOCK No1
+//	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'OR' to fulfill DeMorgan's Law)
+//	ACT : MIN;			// Use 'min' activation method
+//	ACCU : MAX;	
+	
+	
+
+	
+	
+	
+	RULE 1 : IF roundtriptime IS short AND resourceavailability IS poor AND processingspeed IS least THEN ccs IS low;
+	RULE 2 :  IF roundtriptime IS short AND resourceavailability IS poor AND processingspeed IS average THEN ccs IS medium;
+	RULE 3 :  IF roundtriptime IS short AND resourceavailability IS poor AND processingspeed IS intense THEN ccs IS medium;
+	RULE 4 :  IF roundtriptime IS short AND resourceavailability IS standard AND processingspeed IS least THEN ccs IS medium;
+	RULE 5 :  IF roundtriptime IS short AND resourceavailability IS standard AND processingspeed IS average THEN ccs IS medium;
+	RULE 6 : IF roundtriptime IS short AND resourceavailability IS standard AND processingspeed IS intense THEN ccs IS medium;
+	RULE 7 :  IF roundtriptime IS short AND resourceavailability IS rich AND processingspeed IS least THEN ccs IS medium;
+	RULE 8 :  IF roundtriptime IS short AND resourceavailability IS rich AND processingspeed IS average THEN ccs IS medium;
+	RULE 9 : IF roundtriptime IS short AND resourceavailability IS rich AND processingspeed IS intense THEN ccs IS good;
+
+	RULE 10 :IF roundtriptime IS typical AND resourceavailability IS poor AND processingspeed IS least THEN ccs IS low;
+	RULE 11 :IF roundtriptime IS typical AND resourceavailability IS poor AND processingspeed IS average THEN ccs IS low;
+	RULE 12 :IF roundtriptime IS typical AND resourceavailability IS poor AND processingspeed IS intense THEN ccs IS medium;
+	RULE 13 :IF roundtriptime IS typical AND resourceavailability IS standard AND processingspeed IS least THEN ccs IS low;
+	RULE 14 :IF roundtriptime IS typical AND resourceavailability IS standard AND processingspeed IS average THEN ccs IS medium;
+	RULE 15 :IF roundtriptime IS typical AND resourceavailability IS standard AND processingspeed IS intense THEN ccs IS medium;
+	RULE 16 :IF roundtriptime IS typical AND resourceavailability IS rich AND processingspeed IS least THEN ccs IS medium;
+	RULE 17 :IF roundtriptime IS typical AND resourceavailability IS rich AND processingspeed IS average THEN ccs IS medium;
+	RULE 18 :IF roundtriptime IS typical AND resourceavailability IS rich AND processingspeed IS intense THEN ccs IS medium;
+	
+	RULE 19 :IF roundtriptime IS lengthy AND resourceavailability IS poor AND processingspeed IS least THEN ccs IS low;
+	RULE 20 :IF roundtriptime IS lengthy AND resourceavailability IS poor AND processingspeed IS average THEN ccs IS low;
+	RULE 21 :IF roundtriptime IS lengthy AND resourceavailability IS poor AND processingspeed IS intense THEN ccs IS low;
+	RULE 22 :IF roundtriptime IS lengthy AND resourceavailability IS standard AND processingspeed IS least THEN ccs IS low;
+	RULE 23 :IF roundtriptime IS lengthy AND resourceavailability IS standard AND processingspeed IS average THEN ccs IS low;
+	RULE 24 :IF roundtriptime IS lengthy AND resourceavailability IS standard AND processingspeed IS intense THEN ccs IS medium;
+	RULE 25 :IF roundtriptime IS lengthy AND resourceavailability IS rich AND processingspeed IS least THEN ccs IS low;
+	RULE 26 :IF roundtriptime IS lengthy AND resourceavailability IS rich AND processingspeed IS average THEN ccs IS medium;
+	RULE 27 :IF roundtriptime IS lengthy AND resourceavailability IS rich AND processingspeed IS intense THEN ccs IS medium;
+	
+	
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
+
+//to run
+//java -jar jFuzzyLogic.jar -e ccs.fcl  -1 -0.78 -0.67
+//refer https://jfuzzylogic.sourceforge.net/html/manual.html
